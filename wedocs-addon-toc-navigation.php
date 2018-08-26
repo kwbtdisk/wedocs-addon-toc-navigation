@@ -51,9 +51,8 @@ class weDocs_Enhancement_Class {
 
   public function init() {
     $this->file_includes();
-    add_filter('widget_text', 'do_shortcode');
     add_shortcode( 'wedocs_toc_navgation', array($this, 'create_wedocstocnavgation_shortcode') );
-    add_action( 'wp_footer',  array($this, 'add_instantclick_into_footer'), 999999 );
+    // add_action( 'wp_footer',  array($this, 'add_instantclick_into_footer'), 999999 );
   }
   /**
    * Load the required files
