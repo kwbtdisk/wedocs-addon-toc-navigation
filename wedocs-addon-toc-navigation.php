@@ -60,26 +60,32 @@ class weDocs_Enhancement_Class {
    * @return void
    */
   function file_includes() {
+    if(is_admin()) {
+      include_once dirname( __FILE__ ) . '/includes/class-admin.php';
+    }
     include_once dirname( __FILE__ ) . '/includes/class-wedocs-toc-nav-walker.php';
   }
 
   /*
    * Create Shortcode wedocs_toc_navgation
    * Use the shortcode: [wedocs_toc_navgation]
-   * Use the shortcode: [wedocs_toc_navgation parent_post_id="123"]
+   * Use the shortcode with options: [wedocs_toc_navgation parent_post_id="123" toggle_children="true" headings="1,2,3,4,5"]
    */
   function create_wedocstocnavgation_shortcode($atts) {
     // Attributes
     $atts = shortcode_atts(
       array(
         'parent_post_id' => '',
-        'headings' => '',
+        'toggle_children' => false,
+        'headings' => '1,2,3',
       ),
       $atts,
       'wedocs_toc_navgation'
     );
     // Attributes in var
     $parent_post_id = $atts['parent_post_id'];
+    $toggle_children = $atts['toggle_children'];
+    $headings = explode(',', $atts['headings']);
 
     global $post;
 
@@ -96,6 +102,12 @@ class weDocs_Enhancement_Class {
       $parent = $post->ID;
     }
 
+
+    /* Start Fetch contents */
+    global $tic;
+    $tic_option_original = $tic->get_options();
+    $tic->set_option(array( 'heading_levels' => $headings) );
+    $html = '';
     $walker = new WeDocs_Toc_Nav_Walker_Docs();
     $children = wp_list_pages( array(
       'title_li'  => '',
@@ -105,13 +117,19 @@ class weDocs_Enhancement_Class {
       'post_type' => 'docs',
       'walker'    => $walker
     ) );
-    $html = '<h3 class="widget-title">'.get_post_field( 'post_title', $parent, 'display' ).'</h3>';
+    $html .= '<h3 class="widget-title">'.get_post_field( 'post_title', $parent, 'display' ).'</h3>';
     if ($children) {
       // data-instant attr is for InstantClick.io
-      $html .= '<ul class="doc-nav-list" data-instant>'.$children.'</ul>';
+      // control toggle
+      $html .= '<ul class="doc-nav-list '
+               .(!!$toggle_children ? 'doc-nav-list-children_togglable' : '')
+               .'" data-instant>'.$children.'</ul>';
     }
+
+    // Revert
+    $tic->set_option(array( 'heading_levels' => $tic_option_original['heading_levels']) );
     // TODO: save into transient?
-    echo $html;
+    return '<div class="wedocs-sidebar-toc-widget-wrapper">'. $html. '</div>';
   }
 
   function add_instantclick_into_footer() {
